@@ -1,6 +1,12 @@
 import React from 'react';
 
-export const EmojiContainer = ({ message, setMessage }) => {
+export const EmojiContainer = ({
+  message,
+  setMessage,
+  messageInputFieldRef,
+  messageSending,
+  setMessageSending,
+}) => {
   const emojis =
     '😀😃😄😁😆😅😂🤣🥲🥹☺️😊😇🙂🙃😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳🙂‍↕️😏😒🙂‍↔️😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😮‍💨😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🫣🤗🫡🤔🫢🤭🤫🤥😶😶‍🌫️😐😑😬🫨🫠🙄😯😦😧😮😲🥱😴🤤😪😵😵‍💫🫥🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾';
 
@@ -17,7 +23,10 @@ export const EmojiContainer = ({ message, setMessage }) => {
             >
               <div
                 onClick={() => {
-                  setMessage(message + emoji);
+                  if (!messageSending && messageInputFieldRef.current) {
+                    setMessage(message + emoji);
+                    messageInputFieldRef.current.focus(); // Focus the input field when messageSending becomes false
+                  }
                 }}
                 className="relative hover:bg-gray-200 cursor-pointer"
               >

@@ -21,15 +21,6 @@ function writeMessage(chatId, message) {
     });
 }
 
-// Reading data (real-time updates)
-function listenForMessages(chatId) {
-  const chatRef = ref(database, `chats/${chatId}`);
-  onValue(chatRef, (snapshot) => {
-    const data = snapshot.val();
-    console.log('New message:', data);
-  });
-}
-
 // Add a user
 
 async function fetchUserById(userId) {

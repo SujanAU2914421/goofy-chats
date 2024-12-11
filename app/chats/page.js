@@ -18,7 +18,6 @@ import { listenForMessageChangesAndFetch } from './components/messages/currentCh
 import Link from 'next/link';
 import { getAllFriendsDetails } from './components/allFriendsDetails/getAllFriends';
 import { updateAllChatsWithLatestMessages } from './components/messages/fetchAllFriendsLatestChat';
-import { listenForLatestMessage } from './components/messages/listenToAllNewMessages';
 import { getUserDetails } from '../profile/components/getUserDetails';
 import LoadingBtn from '../components/loadingBtn';
 
@@ -32,6 +31,8 @@ const Page = () => {
     setLoading,
     messageSending,
     setMessageSending,
+    messageDeleting,
+    setMessageDeleting,
   } = useMainContext(); // Assuming you have this context for global status updates
   const [currentChat, setCurrentChat] = useState(null); // Stores the currently selected user for the chat
   const [message, setMessage] = useState(''); // Message state for chat
@@ -45,13 +46,11 @@ const Page = () => {
   const [currentChatLastOnlineInTime, setCurrentChatLastOnlineInTime] =
     useState('');
 
-  const [loadingUsersDetails, setLoadingUsersDetails] = useState(true);
+  const [loadingFriendsDetails, setLoadingFriendsDetails] = useState(true);
 
   const [chatIsLoading, setChatIsLoading] = useState(true);
 
   const [allChats, setAllChats] = useState(null);
-
-  const [userDetail, setUserDetail] = useState(null);
 
   function getOfflineDuration() {
     const lastOnline = currentChat.lastOnline;
@@ -79,7 +78,6 @@ const Page = () => {
   }, 10000); // Interval of 10 seconds (10000 milliseconds)
 
   useEffect(() => {
-    // Check if loading is complete and allChats has data
     if (!loading && allChats != null && allChats != []) {
       // Check if currentChat is not set (e.g., null or undefined)
       if (!currentChat || Object.keys(currentChat).length === 0) {
@@ -91,7 +89,7 @@ const Page = () => {
         }
       }
     }
-  }, [loading, allChats, currentChat]); // Added currentChat and userId to dependencies
+  }, [loading, allChats, currentChat]);
 
   useEffect(() => {
     if (usersDetails && usersDetails.length > 0 && userId) {
@@ -121,7 +119,6 @@ const Page = () => {
     const trimmedMessage = message.trim();
 
     if (trimmedMessage !== '') {
-      console.log(trimmedMessage);
       await saveMessage(userId, currentChat.userId, trimmedMessage); // Send the message
       setMessage(''); // Clear the message state
     }
@@ -129,6 +126,8 @@ const Page = () => {
 
   useEffect(() => {
     if (currentChat && userId) {
+      console.log(currentChat);
+
       getOfflineDuration();
       // Fetch all messages and start listening for changes in real-time
       const cleanupListeners = listenForMessageChangesAndFetch(
@@ -182,13 +181,21 @@ const Page = () => {
   };
 
   useEffect(() => {
+    console.log(currentChatMessages);
+  }, [currentChatMessages]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [currentChatMessages]);
 
   const updateUserData = async () => {
-    setLoadingUsersDetails(true);
-    await getAllFriendsDetails(setLoading, setUsersDetails, userId);
-    setLoadingUsersDetails(false);
+    setLoadingFriendsDetails(true);
+    try {
+      await getAllFriendsDetails(setLoading, setUsersDetails, userId);
+    } catch (error) {
+    } finally {
+      setLoadingFriendsDetails(false);
+    }
   };
 
   useEffect(() => {
@@ -250,29 +257,35 @@ const Page = () => {
                       <div className="relative px-2 text-normal font-bold">
                         Messages
                       </div>
-                      {allChats ? (
-                        <AllFriendsMessage
-                          allChats={allChats}
-                          currentChat={currentChat}
-                          setAllChats={setAllChats}
-                          setCurrentChat={setCurrentChat}
-                          getOfflineDuration={getOfflineDuration}
-                          chatIsLoading={chatIsLoading}
-                          setChatIsLoading={setChatIsLoading}
-                        />
+                      {!loadingFriendsDetails ? (
+                        allChats ? (
+                          <AllFriendsMessage
+                            allChats={allChats}
+                            currentChat={currentChat}
+                            setAllChats={setAllChats}
+                            setCurrentChat={setCurrentChat}
+                            getOfflineDuration={getOfflineDuration}
+                            chatIsLoading={chatIsLoading}
+                            setChatIsLoading={setChatIsLoading}
+                          />
+                        ) : (
+                          <div className="relative px-2 pt-8">
+                            <div className="relative text-sm">
+                              No any conversation
+                            </div>
+                            <div className="relative flex pt-4">
+                              <Link
+                                href={`/find-people`}
+                                className="relative cursor-pointer text-xs rounded flex items-center justify-center h-8 w-32 bg-gray-700 text-white"
+                              >
+                                Add friends now?
+                              </Link>
+                            </div>
+                          </div>
+                        )
                       ) : (
-                        <div className="relative px-2 pt-8">
-                          <div className="relative text-sm">
-                            No any conversation
-                          </div>
-                          <div className="relative flex pt-4">
-                            <Link
-                              href={`/find-people`}
-                              className="relative cursor-pointer text-xs rounded flex items-center justify-center h-8 w-32 bg-gray-700 text-white"
-                            >
-                              Add friends now?
-                            </Link>
-                          </div>
+                        <div className="relative pt-8 pl-8">
+                          <LoadingBtn />
                         </div>
                       )}
                     </div>
@@ -304,7 +317,9 @@ const Page = () => {
                           <div className="relative h-auto w-auto">
                             <div className="relative h-auto w-auto">
                               <div className="relative text-sm font-bold text-gray-800">
-                                {currentChat.username}
+                                {currentChat.usersNickName
+                                  ? currentChat.usersNickName
+                                  : currentChat.username}
                               </div>
                               <div className="relative text-xs font-light text-gray-600 pt-1">
                                 {currentChatLastOnlineInTime != ''
@@ -410,13 +425,14 @@ const Page = () => {
                     </div>
                     <div className="relative h-[calc(100%-4rem)] w-full pt-2">
                       <div className="relative h-full w-full border-t border-l border-r">
-                        <div
-                          id="currentChatUiContainer"
-                          className="relative h-[calc(100%-4rem)] w-full overflow-y-auto"
-                        >
+                        <div className="relative h-[calc(100%-4rem)] w-full">
                           {currentChatMessages && (
                             <CurrentChatUiContainer
                               currentChatMessages={currentChatMessages}
+                              currentChat={currentChat}
+                              userId={userId}
+                              messageDeleting={messageDeleting}
+                              setMessageDeleting={setMessageDeleting}
                             />
                           )}
                         </div>

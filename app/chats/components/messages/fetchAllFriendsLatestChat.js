@@ -7,7 +7,11 @@ import {
   get,
 } from 'firebase/database';
 
-const fetchLatestMessageForPair = async (userId, senderId, receiverId) => {
+const fetchLatestMessageAndNicknamesForPair = async (
+  userId,
+  senderId,
+  receiverId
+) => {
   try {
     // Initialize the database reference
     const db = getDatabase();
@@ -19,11 +23,17 @@ const fetchLatestMessageForPair = async (userId, senderId, receiverId) => {
       `messages/${receiverId}_${userId}/messages`
     );
 
+    const nicknamesRef = ref(db, `messages/${userId}_${receiverId}/nicknames`);
+    const reverseNicknamesRef = ref(
+      db,
+      `messages/${receiverId}_${userId}/nicknames`
+    );
+
     // Query the latest message for both directions based on 'sendTime'
     const messagesQuery = query(
       messagesRef,
-      orderByChild('sendTime'), // Ensure sendTime is indexed in your Firebase database
-      limitToLast(1) // Limit to the last message
+      orderByChild('sendTime'),
+      limitToLast(1)
     );
     const reverseMessagesQuery = query(
       reverseMessagesRef,
@@ -31,10 +41,17 @@ const fetchLatestMessageForPair = async (userId, senderId, receiverId) => {
       limitToLast(1)
     );
 
-    // Fetch messages concurrently
-    const [messagesSnapshot, reverseMessagesSnapshot] = await Promise.all([
+    // Fetch messages and nicknames concurrently
+    const [
+      messagesSnapshot,
+      reverseMessagesSnapshot,
+      nicknamesSnapshot,
+      reverseNicknamesSnapshot,
+    ] = await Promise.all([
       get(messagesQuery),
       get(reverseMessagesQuery),
+      get(nicknamesRef),
+      get(reverseNicknamesRef),
     ]);
 
     let latestMessage = null;
@@ -55,17 +72,26 @@ const fetchLatestMessageForPair = async (userId, senderId, receiverId) => {
       }
     }
 
-    return latestMessage; // Return the latest message if exists, otherwise null
+    // Check for the existence of nicknames in both directions
+    const nicknames = nicknamesSnapshot.exists() ? nicknamesSnapshot.val() : {};
+    const reverseNicknames = reverseNicknamesSnapshot.exists()
+      ? reverseNicknamesSnapshot.val()
+      : {};
+
+    // Merge the nicknames from both directions
+    const allNicknames = { ...nicknames, ...reverseNicknames };
+
+    return { latestMessage, nicknames: allNicknames }; // Return the latest message and merged nicknames
   } catch (error) {
     console.error(
-      `Error fetching latest message for pair (${senderId}, ${receiverId}):`,
+      `Error fetching latest message and nicknames for pair (${senderId}, ${receiverId}):`,
       error
     );
-    return null; // Return null in case of error
+    return { latestMessage: null, nickname: null }; // Return null in case of error
   }
 };
 
-// Update allChats with the latest message and sent property
+// Update allChats with the latest message, sent property, and nickname
 export const updateAllChatsWithLatestMessages = async (
   userId,
   allChats,
@@ -76,15 +102,16 @@ export const updateAllChatsWithLatestMessages = async (
   }
 
   try {
-    // Fetch the latest message for each friend in allChats
+    // Fetch the latest message and nickname for each friend in allChats
     const promises = allChats.map(async (friend) => {
-      const latestMessage = await fetchLatestMessageForPair(
-        userId,
-        userId,
-        friend.userId
-      );
+      const { latestMessage, nicknames } =
+        await fetchLatestMessageAndNicknamesForPair(
+          userId,
+          userId,
+          friend.userId
+        );
 
-      // Return the updated friend object with latest message and sent, or the original friend object
+      // Return the updated friend object with latest message, sent, and nickname, or the original friend object
       return latestMessage
         ? {
             ...friend,
@@ -93,14 +120,22 @@ export const updateAllChatsWithLatestMessages = async (
               sent: latestMessage.sent,
               sendTime: latestMessage.sendTime,
             },
+            yourNickname: nicknames[userId] ? nicknames[userId] : '',
+            usersNickName: nicknames[friend.userId]
+              ? nicknames[friend.userId]
+              : '',
           }
         : friend;
     });
 
     // Wait for all promises to resolve
     const updatedChats = await Promise.all(promises);
-
     // Update state with the new data
     setAllChats(updatedChats);
-  } catch (error) {}
+  } catch (error) {
+    console.error(
+      'Error updating allChats with latest messages and nicknames:',
+      error
+    );
+  }
 };

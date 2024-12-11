@@ -30,7 +30,6 @@ export const updateNicknames = async (
 
       // Create new document with nicknames field
       await update(documentRef, { nicknames });
-      console.log('New document created and nicknames saved.');
       return;
     }
 
@@ -48,14 +47,9 @@ export const updateNicknames = async (
     } else if (targetUserId === friendId) {
       nicknames[friendId] = nickname || ''; // Handle empty nickname
     } else {
-      throw new Error('Invalid target userId.');
     }
 
     // Save the updated nicknames
     await update(documentRef, { nicknames });
-
-    console.log('Nicknames updated successfully.');
-  } catch (error) {
-    console.error('Error updating nicknames:', error);
-  }
+  } catch (error) {}
 };

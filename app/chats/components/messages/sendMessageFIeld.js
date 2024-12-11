@@ -1,5 +1,5 @@
 import LoadingBtn from '@/app/components/loadingBtn';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { EmojiContainer } from '../emoji';
 
 export default function SendMessageField({
@@ -13,6 +13,20 @@ export default function SendMessageField({
   // Handles sending the message
 
   const [emojiBoxShow, setEmojiBoxShow] = useState(false);
+
+  const messageInputFieldRef = useRef(null); // Create a reference to the input field
+
+  useEffect(() => {
+    if (!messageSending && messageInputFieldRef.current) {
+      messageInputFieldRef.current.focus(); // Focus the input field when messageSending becomes false
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!messageSending && messageInputFieldRef.current) {
+      messageInputFieldRef.current.focus(); // Focus the input field when messageSending becomes false
+    }
+  }, [messageSending]); // Run the effect whenever messageSending changes
 
   const handleSendMessage = async (event) => {
     setEmojiBoxShow(false);
@@ -33,6 +47,9 @@ export default function SendMessageField({
 
   useEffect(() => {
     setMessage(''); // Reset message input when current chat changes
+    if (!messageSending && messageInputFieldRef.current) {
+      messageInputFieldRef.current.focus(); // Focus the input field when messageSending becomes false
+    }
   }, [currentChat]);
 
   return (
@@ -98,7 +115,7 @@ export default function SendMessageField({
             <input
               type="text"
               value={message} // Correctly bind the state variable
-              id="messagefield"
+              ref={messageInputFieldRef} // Attach the reference to the input field
               onChange={(e) => {
                 setMessage(e.target.value); // Update the state
               }}
@@ -136,7 +153,13 @@ export default function SendMessageField({
             </div>
             {emojiBoxShow && (
               <div className="absolute bottom-12 right-0 h-[20rem] w-[20rem] overflow-hidden rounded-md border bg-white">
-                <EmojiContainer message={message} setMessage={setMessage} />
+                <EmojiContainer
+                  message={message}
+                  setMessage={setMessage}
+                  messageInputFieldRef={messageInputFieldRef}
+                  messageSending={messageSending}
+                  setMessageSending={setMessageSending}
+                />
               </div>
             )}
           </div>

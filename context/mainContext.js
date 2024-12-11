@@ -14,6 +14,7 @@ export default function MainContextProvider({ children }) {
   const [usersDetails, setUsersDetails] = useState();
   const [loading, setLoading] = useState(true);
   const [messageSending, setMessageSending] = useState(false);
+  const [messageDeleting, setMessageDeleting] = useState(false);
 
   return (
     <MainContext.Provider
@@ -26,6 +27,8 @@ export default function MainContextProvider({ children }) {
         setLoading,
         messageSending,
         setMessageSending,
+        messageDeleting,
+        setMessageDeleting,
       }}
     >
       {children}

@@ -89,7 +89,7 @@ export const AllFriendsMessage = ({
                 <div className="relative h-auto w-[calc(100%-4rem)]">
                   <div className="relative w-full flex items-center flex-nowrap gap-2">
                     <div className="relative text-sm font-medium text-gray-800">
-                      {user.username}
+                      {user.usersNickName ? user.usersNickName : user.username}
                     </div>
                   </div>
                   <div className="relative text-xs font-medium text-gray-700 pt-1 flex">

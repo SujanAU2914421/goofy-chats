@@ -22,7 +22,6 @@ export default function OthersProfile({ user_id }) {
         setFetchingFriends(true);
         try {
           const friendsData = await fetchFriendsDetails(userId);
-          console.log(friendsData);
 
           setAllFriends(friendsData); // Store the friends data in the state
         } catch (error) {
@@ -67,8 +66,6 @@ export default function OthersProfile({ user_id }) {
 
   // Retrieve userId from localStorage or URL
   useEffect(() => {
-    console.log('load');
-
     const userId = getUserIdFromLocalStorage();
     if (!userId) {
       window.location.pathname = '/login';

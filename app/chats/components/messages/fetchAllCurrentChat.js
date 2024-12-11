@@ -34,10 +34,13 @@ export const fetchMessages = async (
     // Check if the first snapshot exists and contains data
     if (snapshot1.exists()) {
       const allMessages1 = snapshot1.val();
-      const filteredMessages = Object.values(allMessages1).map((message) => {
-        message.sent = message.senderId === userId; // Mark sent
-        return message;
-      });
+      const filteredMessages = Object.entries(allMessages1).map(
+        ([messageId, message]) => {
+          message.messageId = messageId; // Add messageId (document ID)
+          message.sent = message.senderId === userId; // Mark sent
+          return message;
+        }
+      );
       setCurrentChatMessages(filteredMessages); // Set messages if found
       messagesFound = true;
     }
@@ -45,10 +48,13 @@ export const fetchMessages = async (
     // Check if the second snapshot exists and contains data
     if (!messagesFound && snapshot2.exists()) {
       const allMessages2 = snapshot2.val();
-      const filteredMessages = Object.values(allMessages2).map((message) => {
-        message.sent = message.senderId === userId; // Mark sent
-        return message;
-      });
+      const filteredMessages = Object.entries(allMessages2).map(
+        ([messageId, message]) => {
+          message.messageId = messageId; // Add messageId (document ID)
+          message.sent = message.senderId === userId; // Mark sent
+          return message;
+        }
+      );
       setCurrentChatMessages(filteredMessages); // Set messages if found
       messagesFound = true;
     }
