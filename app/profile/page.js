@@ -24,7 +24,7 @@ export default function Profile() {
 
     setUserId(getUserIdFromLocalStorage());
 
-    setGivenUid(params.get('userId'));
+    setGivenUid(params.get('user_id'));
 
     const userIdT = getUserIdFromLocalStorage();
 
